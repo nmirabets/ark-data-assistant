@@ -12,9 +12,12 @@ load_dotenv()
 # App title
 st.set_page_config(page_title="ADA - Ark Data Assistant", page_icon=":llama:",layout="centered")
 
-#replicate_api = st.secrets['REPLICATE_API_TOKEN']
-replicate_api = os.getenv('REPLICATE_API_TOKEN')
+user = st.secrets['DB_USER']
+password = st.secrets['DB_PASS']
+replicate_api = st.secrets['REPLICATE_API_TOKEN']
 
+os.environ['DB_USER'] = user
+os.environ['DB_PASS'] = password
 os.environ['REPLICATE_API_TOKEN'] = replicate_api
 
 initial_prompt = "Hi, what data can I assist you today?"
