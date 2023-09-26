@@ -16,11 +16,12 @@ jsonschema-specifications==2023.7.1
 markdown-it-py==3.0.0
 MarkupSafe==2.1.3
 mdurl==0.1.2
+mysql-connector-python==8.1.0
 numpy==1.26.0
 packaging==23.1
 pandas==2.1.1
 Pillow==9.5.0
-protobuf==4.24.3
+protobuf==4.21.12
 pyarrow==13.0.0
 pydantic==2.4.1
 pydantic_core==2.10.1
