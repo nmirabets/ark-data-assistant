@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+# ignore secrets
+.streamlit
+
 # Distribution / packaging
 .Python
 build/
