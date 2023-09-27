@@ -1,9 +1,12 @@
+import streamlit as st
 import mysql.connector
 import pandas as pd
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
+replicate_api = st.secrets['DB_USER']
+replicate_api = st.secrets['DB_PASS']
 
 # Function to execute MySQL query and return the result as a DataFrame
 def execute_query(query):

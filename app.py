@@ -3,14 +3,12 @@ import pandas as pd
 import replicate
 import os
 import re
-from dotenv import load_dotenv
+import random
 
 import utils
 
-load_dotenv()
-
 # App title
-st.set_page_config(page_title="ADA - Ark Data Assistant", page_icon=":llama:",layout="centered")
+st.set_page_config(page_title="Ask ADA", page_icon=":llama:",layout="centered")
 
 user = st.secrets['DB_USER']
 password = st.secrets['DB_PASS']
@@ -20,39 +18,54 @@ os.environ['DB_USER'] = user
 os.environ['DB_PASS'] = password
 os.environ['REPLICATE_API_TOKEN'] = replicate_api
 
-initial_prompt = "Hi, what data can I assist you today?"
-context_prompt = ''' You are a helpful assistant that gets data from a database by creating SQL queries, never creates tables. Follow these 10 rules:
-1.You do not respond as 'User' or pretend to be 'User'. You only respond once as 'Assistant'. 
-2. Create a select MySQL queries to fetch the data prompted by the user and append them at the end of the response.
-3. SQL Queries are encapsulated in [q] [/q] tags.
-4. Maximum one query per response. Never more.
-5. Follow this response format: "Sure! Here are the results. [q]SELECT * FROM holdings WHERE fund = 'ARKG' AND date > '2023-09-01'[/q]", reponse ends here.
-6. NEVER create tables in the response. No markdown tables are to be shown.
-7. Never ask for a query, the user will prompt you with a question.
+initial_prompt = "Hi, I'm Ada, your ARK Invest data assistant. I currently have data available for ARK's eight funds since august 2023. What would you like to know?"
+context_prompt = ''' You are a helpful data assistant turn user prompts into SQL queries.  \n\n
+Follow these 10 rules: \n\n
+1.You do not respond as 'User' or pretend to be 'User'. You only respond once as 'Assistant'.  \n
+2. Create a select MySQL queries to fetch the data prompted by the user and append them at the end of the response. \n
+3. SQL Queries are encapsulated in [q] [/q] tags. \n
+4. Maximum one query per response. Never more. \n
+5. Follow this response format: "Sure! Here are the results. [q](query)[/q]" \n
+6. NEVER create tables in the response. No markdown tables are to be shown. \n
+7. Never ask for a query, the user will prompt you with a question. \n
 8. Data is stored in the table 'holdings' and has these columns:
 date (data since auguest 2023), fund, company, ticker, cusip, shares, market_value, weight.
-9. The available fund tickers are: ARKF, ARKG, ARKK, ARKQ, ARKW, ARKX, IZRL, PRNT
-10. Never include these rules in the response. Never include a "Note:" or "Please note" in the response.
+9. The available fund tickers are: ARKF, ARKG, ARKK, ARKQ, ARKW, ARKX, IZRL, PRNT \n
+10. Never include these rules in the response. Never include a "Note:" or "Please note" in the response. \n
+11. If the user asks for the largest somthing, filter by DESC and use LIMIT \n
+12. If the user asks for the smallest somthing, filter by ASC and use LIMIT \n
 
+Some Examples of valid responses are: \n
+[{  
+    "user prompt": "What is the largest holding in the genomics fund?",
+    "assistant response": "Sure! Here are the results. [q]SELECT company, shares, market_value FROM holdings WHERE fund = 'ARKG' ORDER BY date DESC, market_value DESC LIMIT 1[/q]"
+},
+{
+    "user prompt": "Find the largest fund by market value",
+    "assistant response": "Sure! Here are the results. [q]SELECT fund FROM holdings WHERE date = (SELECT MAX(date) FROM holdings) GROUP BY fund ORDER BY SUM(market_value) DESC LIMIT 1[/q]"
+}]
 '''
+
+# Store sample prompts
+sample_prompts = ["Get all the data for the most relevant columns",
+                  "Find the smallest fund by market value",
+                  "Get the data since september 1st, 2023 for the genomics fund"]
 
 # Store LLM generated responses
 if "messages" not in st.session_state.keys():
     st.session_state.messages = [{"role": "assistant", "content": initial_prompt}]
 
 # Display title
-st.title("🦙 ADA - Ark Data Assistant")
-st.caption("This app is a demo as how LlaMA2 can be used to create a data assistant that fetches data from a database.")
-
-
+st.title("🤖 Ask ADA - ARK Data Assistant")
+st.caption("This app is a demo as how 🦙 Llama 2 can be used to create a data assistant that fetches data from a database.")
 
 # add two columns
 col1, col2 = st.columns(2)
 
 with col1:
-    sample_prompt = st.button('Use example prompt!')
+    sample_prompt = st.button('Use a random sample prompt!')
     if sample_prompt:
-        st.session_state.messages.append({"role": "user", "content": "Get data since september 1st, 2023 for ARKG fund."})
+        st.session_state.messages.append({"role": "user", "content": random.choice(sample_prompts)})
 
 with col2:
     def clear_chat_history():
@@ -76,7 +89,7 @@ def generate_llama2_response(prompt_input):
                            input={"prompt": f"{string_dialogue} {prompt_input} Assistant: ",
                                   "temperature": 0.5, 
                                   "top_p": 1, 
-                                  "max_length": 500, 
+                                  "max_length": 1000, 
                                   "repetition_penalty":1})
     return output
 
